@@ -22,6 +22,8 @@ namespace ProcessMonitor
         public string RestartTime;
         public List<string> on_process_list = new List<string>();//需要监视的进程列表
 
+        public System.IO.StreamWriter file;
+
         public Form1()
         {
             InitializeComponent();
@@ -40,8 +42,10 @@ namespace ProcessMonitor
 
         private void MonitorStart()
         {
-            FileStream fs = new FileStream("log.txt", FileMode.Create);
-            StreamWriter sw = new StreamWriter(fs);
+            //FileStream fs = new FileStream("log.txt", FileMode.Create);
+            //StreamWriter sw = new StreamWriter(fs);
+            string CurDir = System.AppDomain.CurrentDomain.BaseDirectory;
+            String FilePath = CurDir + "log.txt";
             //新建一个Stopwatch变量用来统计程序运行时间
             Stopwatch watch = Stopwatch.StartNew();
             //获取本机运行的所有进程ID和进程名,并输出进程所使用的工作集和私有工作集
@@ -51,22 +55,29 @@ namespace ProcessMonitor
                 {
                     if (on_process_list.Contains(ps.ProcessName))
                     {
+                        //文件覆盖方式添加内容
+                        file = new System.IO.StreamWriter(FilePath, true);
                         PerformanceCounter pf1 = new PerformanceCounter("Process", "Working Set - Private", ps.ProcessName);
                         //PerformanceCounter pf2 = new PerformanceCounter("Process", "Working Set", ps.ProcessName);
                         //sw.Write(string.Format("{0}:{1}  {2:N}KB\r\n", ps.ProcessName, "工作集(进程类)", ps.WorkingSet64 / 1024));
                         //sw.Write(string.Format("{0}:{1}  {2:N}KB\r\n", ps.ProcessName, "工作集        ", pf2.NextValue() / 1024));
-                        sw.Write(string.Format("{0}:{1} ; {2:N}KB ; {3}\r\n", ps.ProcessName, " 私有工作集 ", pf1.NextValue() / 1024, DateTime.Now));
+                        file.Write(string.Format("{0}:{1} ; {2:N}KB ; {3}\r\n", ps.ProcessName, " 私有工作集 ", pf1.NextValue() / 1024, DateTime.Now));
+                        //关闭文件
+                        file.Close();
+                        //释放对象
+                        file.Dispose();
                     }
                 }
                 Thread.Sleep(Convert.ToInt32(TimeSpan));
             }
             watch.Stop();
-            sw.Write("结束监控，运行时间：" + watch.Elapsed.ToString());
-            //清空缓冲区
-            sw.Flush();
-            //关闭流
-            sw.Close();
-            fs.Close();
+            //文件覆盖方式添加内容
+            file = new System.IO.StreamWriter(FilePath, true);
+            file.Write("结束监控，运行时间：" + watch.Elapsed.ToString());
+            //关闭文件
+            file.Close();
+            //释放对象
+            file.Dispose();
             MessageBox.Show("进程监控结束！");
         }
 
